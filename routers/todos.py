@@ -1,14 +1,17 @@
 import sys
+
 sys.path.append("..")
 
 from typing import Optional
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, HTTPException, APIRouter, Request
 import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from .auth import get_current_user, get_user_exception
 
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter(
     prefix="/todos",
@@ -17,6 +20,7 @@ router = APIRouter(
 )
 
 models.Base.metadata.create_all(bind=engine)
+templates = Jinja2Templates(directory="templates")
 
 
 def get_db():
@@ -34,6 +38,12 @@ class Todo(BaseModel):
     complete: bool
 
 
+@router.get("/test")
+async def test(request: Request):
+    # {"request": request}, it is context
+    return templates.TemplateResponse("register.html", {"request": request})
+
+
 @router.get("/")
 async def read_all(db: Session = Depends(get_db)):
     return db.query(models.Todos).all()
@@ -44,8 +54,8 @@ async def read_all_by_user(user: dict = Depends(get_current_user),
                            db: Session = Depends(get_db)):
     if user is None:
         raise get_user_exception()
-    return db.query(models.Todos)\
-        .filter(models.Todos.owner_id == user.get("id"))\
+    return db.query(models.Todos) \
+        .filter(models.Todos.owner_id == user.get("id")) \
         .all()
 
 
@@ -55,9 +65,9 @@ async def read_todo(todo_id: int,
                     db: Session = Depends(get_db)):
     if user is None:
         raise get_user_exception()
-    todo_model = db.query(models.Todos)\
-        .filter(models.Todos.id == todo_id)\
-        .filter(models.Todos.owner_id == user.get("id"))\
+    todo_model = db.query(models.Todos) \
+        .filter(models.Todos.id == todo_id) \
+        .filter(models.Todos.owner_id == user.get("id")) \
         .first()
     if todo_model is not None:
         return todo_model
@@ -91,9 +101,9 @@ async def update_todo(todo_id: int,
     if user is None:
         raise get_user_exception()
 
-    todo_model = db.query(models.Todos)\
-        .filter(models.Todos.id == todo_id)\
-        .filter(models.Todos.owner_id == user.get("id"))\
+    todo_model = db.query(models.Todos) \
+        .filter(models.Todos.id == todo_id) \
+        .filter(models.Todos.owner_id == user.get("id")) \
         .first()
 
     if todo_model is None:
@@ -117,16 +127,16 @@ async def delete_todo(todo_id: int,
     if user is None:
         raise get_user_exception()
 
-    todo_model = db.query(models.Todos)\
-        .filter(models.Todos.id == todo_id)\
-        .filter(models.Todos.owner_id == user.get("id"))\
+    todo_model = db.query(models.Todos) \
+        .filter(models.Todos.id == todo_id) \
+        .filter(models.Todos.owner_id == user.get("id")) \
         .first()
 
     if todo_model is None:
         raise http_exception()
 
-    db.query(models.Todos)\
-        .filter(models.Todos.id == todo_id)\
+    db.query(models.Todos) \
+        .filter(models.Todos.id == todo_id) \
         .delete()
 
     db.commit()
@@ -143,19 +153,3 @@ def successful_response(status_code: int):
 
 def http_exception():
     return HTTPException(status_code=404, detail="Todo not found")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
