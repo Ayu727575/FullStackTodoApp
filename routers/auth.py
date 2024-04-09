@@ -108,7 +108,6 @@ async def login(request: Request, db: Session = Depends(get_db)):
         validate_user_cookie = await login_for_access_token(response=response, form_data=form,
                                                             db=db)
         if not validate_user_cookie:
-            print("1111111111111")
             msg = "Incorrect Username or Password"
             return templates.TemplateResponse("login.html", {"request": request, "msg": msg})
         return response
@@ -117,18 +116,29 @@ async def login(request: Request, db: Session = Depends(get_db)):
         return templates.TemplateResponse("login.html", {"request": request, "mag": msg})
 
 
+@router.get("/logout", response_class=HTMLResponse)
+async def logout(request: Request):
+    msg = "Logout Successful"
+    response = templates.TemplateResponse("login.html", {"request": request, "msg": msg})
+    response.delete_cookie(key="access_token")
+    return response
+
+
 @router.get("/register", response_class=HTMLResponse)
 async def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 
-async def get_current_user(token: str = Depends(oauth2_bearer)):
+async def get_current_user(request: Request):
     try:
+        token = request.cookies.get("access_token")
+        if token is None:
+            return None
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         user_id: int = payload.get("id")
         if username is None or user_id is None:
-            raise get_user_exception()
+            return None
         return {"username": username, "id": user_id}
     except JWTError:
         raise get_user_exception()
