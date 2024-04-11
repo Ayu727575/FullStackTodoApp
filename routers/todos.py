@@ -37,7 +37,7 @@ async def read_all_by_user(request: Request, db: Session = Depends(get_db)):
     if user is None:
         return RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
     todos = db.query(models.Todos).filter(models.Todos.owner_id == user.get("id")).all()
-    return templates.TemplateResponse("Home.html", {"request": request, "todos": todos, "user": user})
+    return templates.TemplateResponse("home.html", {"request": request, "todos": todos, "user": user})
 
 
 @router.get("/add-todo", response_class=HTMLResponse)
