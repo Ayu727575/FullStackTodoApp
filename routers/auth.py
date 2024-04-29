@@ -17,6 +17,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 ALGORITHM = "HS256"
+SECRET_KEY = "KlgH6AzYDeZeGwD288to79I3vTHT8wp7"
 
 templates = Jinja2Templates(directory="templates")
 
